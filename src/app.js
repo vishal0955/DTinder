@@ -1,69 +1,26 @@
 const express = require("express");
 const connectDb = require("./config/database");
+const cors = require('cors')
 const app = express();
-const User = require("./models/user");
-app.use(express.json())
+const cookieParser = require('cookie-parser')
+
+app.use( cors({
+  origin: "http://localhost:5173",
+  credentials: true,
+}))
+app.use(express.json());
+app.use(cookieParser());
+
+const authRouter = require("./routes/auth");
+const profileRouter = require("./routes/profile");
+const requestRouter = require("./routes/request");
+const userRouter = require("./routes/user");
 
 
-app.post("/signup", async (req,res) => {
-  const user = new User(req.body);
-
-  try{
-    await user.save();
-    res.send("user added")
-  }catch(error){
-    res.status(400).send("went wrong ")
-  }
-})
-
-//api to get all users 
-app.get("/users",async (req,res) => {
-     try {
-      const users = await User.find();
-      res.send(users);
-     } catch (error) {
-      res.status(401).send("something went wrong")
-     }
-
-})
-//api to get a one user
-app.get("/user",async (req,res) =>{
-   const Email = req.body.emailAddress;
-   console.log(Email);
-  try{
-    const user = await User.find( {emailAddress: Email});
-   res.send(user);
-  }catch(error){
-    res.status(401).send("Something went wrong")
-  }
-})
-
-//api to delete one user 
-app.delete("/delete", async(req,res) => {
-  const userId = req.body._id;
-  try{
-  await User.findOneAndDelete({_id: userId})
-  res.send("user Deleted")
-  }catch(err){
-    res.status(404).send("update failed" + err.message)
-  }
-})
-//update api 
-app.patch("/update",async(req,res) => {
-  const userId = req.body.userId;
-  const Data= req.body;
-  try{
-  await User.findByIdAndUpdate({_id: userId},Data,{
-    returnDocuments: "after",
-    runValidators: true,
-  })
-  res.send("user updated successfully")
-  }catch(error){
-    res.status(400).send("Update Failed"+ error.message);
-  }
-
-
-})
+app.use("/",authRouter);
+app.use("/",profileRouter);
+app.use("/",requestRouter);
+app.use("/", userRouter);
 
 connectDb().then( () => {
   console.log("db is connected ");
